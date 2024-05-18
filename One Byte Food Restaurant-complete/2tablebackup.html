@@ -1,0 +1,1196 @@
+<?php
+// Establish database connection
+$servername = "localhost";
+$username = "root";
+$password = "";
+$database = "one_byte_foods";
+
+$conn = new mysqli($servername, $username, $password, $database);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Fetch table availability from the database
+$sql_availability = "SELECT table_number, availability FROM restaurant_tables";
+$result_availability = $conn->query($sql_availability);
+$table_availability = array();
+if ($result_availability->num_rows > 0) {
+    while ($row = $result_availability->fetch_assoc()) {
+        $table_availability[$row['table_number']] = $row['availability'];
+    }
+}
+
+// Function to sanitize input data
+function sanitize_input($data) {
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data);
+    return $data;
+}
+
+// Handle form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Sanitize and store form data
+    $date = sanitize_input($_POST["date"]);
+    $time = sanitize_input($_POST["time"]);
+    $seats = sanitize_input($_POST["seats"]);
+    $cost = sanitize_input($_POST["cost"]);
+    $selected_tables = json_decode($_POST["selected_tables"]);
+
+    // Check if the user is logged in and get user information
+    session_start();
+    if (isset($_SESSION['user_id'])) {
+        $user_id = $_SESSION['user_id'];
+
+        // Fetch user name and email from the users table
+        $sql_user = "SELECT username, email FROM users WHERE id = '$user_id'";
+        $result_user = $conn->query($sql_user);
+
+        if ($result_user->num_rows > 0) {
+            $user_data = $result_user->fetch_assoc();
+            $user_name = $user_data['username'];
+            $user_email = $user_data['email'];
+
+            // Insert booking into database for each selected table
+            foreach ($selected_tables as $table_number) {
+                $sql_booking = "INSERT INTO booked_tables_two (booking_date, booking_time, table_number, user_name, user_email) 
+                                VALUES ('$date', '$time', '$table_number', '$user_name', '$user_email')";
+
+                if ($conn->query($sql_booking) !== TRUE) {
+                    echo "Error: " . $sql_booking . "<br>" . $conn->error;
+                    // Rollback any successful bookings if an error occurs
+                    $sql_rollback = "DELETE FROM booked_tables_two WHERE booking_date = '$date' AND booking_time = '$time'";
+                    $conn->query($sql_rollback);
+                    break; // Stop processing further bookings
+                }
+            }
+            echo "Booking stored successfully.";
+        } else {
+            echo "Error: User data not found.";
+        }
+    } else {
+        echo "Error: User not logged in.";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Booking</title>
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="2table.css">
+</head>
+<body>
+    <!-- Header and navigation code -->
+    <header>
+        <div class="container">
+            <a href="Mainpage.php" class="logo-link">
+                <h1>One Byte Foods</h1>
+            </a>
+            <nav>
+                <ul>
+                    <li><a href="booking.php" class="active">Bookings</a></li>
+                    <li><a href="contactUS.php">Contact Us</a></li>
+                    <li><a href="login.php">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="booking-container">
+        <h1>Select Your Table for 2</h1>
+        <!-- Table selection area -->
+        
+        <div class="table-selection">
+            <!-- First column -->
+            <div class="column">
+                <?php for ($i = 1; $i <= 5; $i++) : ?>
+                    <div class="table-box <?php echo ($table_availability[$i] === 'reserved') ? 'reserved' : ($table_availability[$i] === 'sold_out' ? 'sold_out' : ($table_availability[$i] === 'available' ? 'available' : 'unavailable')); ?>" onclick="toggleTable(<?php echo $i; ?>)">Table <?php echo $i; ?></div>
+                <?php endfor; ?>
+            </div>
+
+            <!-- Second column -->
+            <div class="column1">
+                <?php for ($i = 6; $i <= 10; $i++) : ?>
+                    <div class="table-box <?php echo ($table_availability[$i] === 'reserved') ? 'reserved' : ($table_availability[$i] === 'sold_out' ? 'sold_out' : ($table_availability[$i] === 'available' ? 'available' : 'unavailable')); ?>" onclick="toggleTable(<?php echo $i; ?>)">Table <?php echo $i; ?></div>
+                <?php endfor; ?>
+            </div>
+        </div>
+        
+        <!-- Legend for table status -->
+        <div class="legend">
+            <div><span class="dot unavailable"></span>Unavailable</div>
+            <div><span class="dot sold_out"></span>Sold Out</div>
+            <div><span class="dot available"></span>Available</div>
+            <div><span class="dot my-seat"></span>My Seat</div>
+            <div><span class="dot reserved"></span>Reserved</div>
+        </div>
+
+        <form id="booking-form" class="reservation-form" method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
+            <!-- Form fields for reservation details -->
+            <label for="date"><b>Select Date:</b></label>
+            <input type="date" id="date" name="date" required class="date-input">
+            
+            <label for="time"><b>Select Time:</b></label>
+            <input type="time" id="time" name="time" required class="time-input">
+            
+            <label for="Number-of-seats"><b>Number of Seats:</b></label>
+            <input type="text" placeholder="Number of Seats" id="seats" name="seats" required class="seat">
+            
+            <label for="Total-cost"><b>Total Cost:</b></label>
+            <input type="text" placeholder="Total Cost" id="cost" name="cost" required class="cost">
+            
+            <!-- Hidden input field to store selected table numbers -->
+            <input type="hidden" name="selected_tables" id="selected_tables" value="">
+            
+            <!-- Change type to "submit" to trigger form submission -->
+            <button type="submit" class="reserve-button">Reserve Table</button>
+            <button type="button" class="buy-button">Buy Table</button>
+            <!-- Buy button -->
+            <a href="payment.php" class="buy-button"></a>
+        </form>
+        
+        <!-- Success message for booking stored successfully -->
+        <div id="success-message" style="display: none;">
+            Booking stored successfully.
+        </div>
+    </div>
+    
+    <script>
+        // Initialize selectedTables array
+        var selectedTables = [];
+
+        console.log("Selected tables on page load:", selectedTables);
+
+        function toggleTable(tableNumber) {
+            console.log("Table number clicked:", tableNumber);
+            
+            var index = selectedTables.indexOf(tableNumber);
+            if (index === -1) {
+                // Table not selected, so select it
+                selectedTables.push(tableNumber);
+            } else {
+                // Table already selected, so deselect it
+                selectedTables.splice(index, 1);
+            }
+
+            console.log("Selected tables after click:", selectedTables);
+
+            // Update table colors and form field
+            updateTableColors();
+            updateFormFields();
+        }
+
+        function updateTableColors() {
+            var tables = document.querySelectorAll('.table-box');
+            tables.forEach(function(table, index) {
+                if (selectedTables.includes(index + 1)) {
+                    table.classList.add('my-seat'); // Add the 'my-seat' class
+                } else {
+                    table.classList.remove('my-seat'); // Remove the 'my-seat' class
+                }
+            });
+        }
+
+        function updateFormFields() {
+            // Update hidden input field value with selected tables
+            document.getElementById('selected_tables').value = JSON.stringify(selectedTables);
+            
+            // Update the number of tables displayed
+            var numTables = selectedTables.length;
+            document.getElementById('seats').value = numTables * 2; // Assuming each table has 2 seats
+
+            // Update the total amount displayed
+            var totalAmount = numTables * 200; // Assuming each table costs $200
+            document.getElementById('cost').value = totalAmount;
+        }
+
+        function submitForm() {
+            // Your existing code for submitting the form goes here
+            var form = document.getElementById('booking-form');
+            if (form.checkValidity()) {
+                // Update the hidden input field value before submitting the form
+                updateFormFields();
+                form.submit();
+            } else {
+                alert('Please select date, time, and number of seats.');
+            }
+        }
+
+        function hideSuccessMessage() {
+            var successMessage = document.getElementById('success-message');
+            successMessage.style.display = 'none';
+        }
+
+        // Check if the success message exists, then hide it after 2 seconds
+        var successMessage = document.getElementById('success-message');
+        if (successMessage) {
+            setTimeout(hideSuccessMessage, 2000); // Hide after 2 seconds (2000 milliseconds)
+        }
+
+        function clearSelectedTables() {
+            selectedTables = []; // Clear the selected tables array
+            updateTableColors(); // Update table colors to reflect cleared selection
+            updateFormFields(); // Update form fields to reflect cleared selection
+        }
+
+        window.onload = clearSelectedTables;
+    </script>
+</body>
+</html>
+
+<?php
+// Close database connection
+$conn->close();
+?>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<?php
+// Establish database connection
+$servername = "localhost";
+$username = "root";
+$password = "";
+$database = "one_byte_foods";
+
+$conn = new mysqli($servername, $username, $password, $database);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Fetch table availability from the database
+$sql_availability = "SELECT TableID, TableName, Availability FROM tables";
+$result_availability = $conn->query($sql_availability);
+$table_availability = array();
+if ($result_availability->num_rows > 0) {
+    while ($row = $result_availability->fetch_assoc()) {
+        $table_availability[$row['TableID']] = $row['Availability'];
+    }
+}
+
+// Function to sanitize input data
+function sanitize_input($data) {
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data);
+    return $data;
+}
+
+// Handle form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Sanitize and store form data
+    $date = sanitize_input($_POST["date"]);
+    $time = sanitize_input($_POST["time"]);
+    $seats = sanitize_input($_POST["seats"]);
+    $cost = sanitize_input($_POST["cost"]);
+    $selected_tables = json_decode($_POST["selected_tables"]);
+
+    // Check if date and time are filled
+    if (empty($date) || empty($time)) {
+        die("Date and time are required.");
+    }
+
+    // Update table availability to 'sold-out' in the tables table
+    foreach ($selected_tables as $table_id) {
+        $sql_update_availability = "UPDATE tables SET Availability = 'sold-out' WHERE TableID = ?";
+        $stmt = $conn->prepare($sql_update_availability);
+        $stmt->bind_param("i", $table_id);
+        $stmt->execute();
+    }
+
+    // Insert booking into booked_tables_two for each selected table
+    session_start();
+    if (isset($_SESSION['user_id'])) {
+        $user_id = $_SESSION['user_id'];
+
+        // Fetch user name and email from the users table
+        $sql_user = "SELECT username, email FROM users WHERE id = ?";
+        $stmt = $conn->prepare($sql_user);
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result_user = $stmt->get_result();
+
+        if ($result_user->num_rows > 0) {
+            $user_data = $result_user->fetch_assoc();
+            $user_name = $user_data['username'];
+            $user_email = $user_data['email'];
+
+            // Insert booking into booked_tables_two for each selected table
+            foreach ($selected_tables as $table_id) {
+                $sql_booking = "INSERT INTO booked_tables_two (booking_date, booking_time, table_number, user_name, user_email) 
+                VALUES (?, ?, ?, ?, ?)";
+
+                $stmt = $conn->prepare($sql_booking);
+                $stmt->bind_param("ssiss", $date, $time, $table_id, $user_name, $user_email);
+                if ($stmt->execute() !== TRUE) {
+                    echo "Error: " . $stmt->error;
+                }
+            }
+            echo "Tables bought successfully.";
+        } else {
+            echo "Error: User data not found.";
+        }
+    } else {
+        echo "Error: User not logged in.";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Booking</title>
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="2table.css">
+</head>
+<body>
+    <!-- Header and navigation code -->
+    <header>
+        <div class="container">
+            <a href="Mainpage.php" class="logo-link">
+                <h1>One Byte Foods</h1>
+            </a>
+            <nav>
+                <ul>
+                    <li><a href="booking.php" class="active">Bookings</a></li>
+                    <li><a href="contactUS.php">Contact Us</a></li>
+                    <li><a href="login.php">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="booking-container">
+        <h1>Select Your Table for 2</h1>
+        <!-- Table selection area -->
+        
+        <div class="table-selection">
+            <!-- First column -->
+            <div class="column">
+                <?php for ($i = 1; $i <= 5; $i++) : ?>
+                    <div class="table-box <?php echo ($table_availability[$i] === 'reserved') ? 'reserved' : (($table_availability[$i] === 'sold-out') ? 'sold_out' : (($table_availability[$i] === 'available') ? 'available' : 'unavailable')); ?>" onclick="<?php echo ($table_availability[$i] === 'available') ? 'toggleTable('.$i.');' : ''; ?>">Table <?php echo $i; ?></div>
+                <?php endfor; ?>
+            </div>
+
+            <!-- Second column -->
+            <div class="column">
+                <?php for ($i = 6; $i <= 10; $i++) : ?>
+                    <div class="table-box <?php echo ($table_availability[$i] === 'reserved') ? 'reserved' : (($table_availability[$i] === 'sold-out') ? 'sold_out' : (($table_availability[$i] === 'available') ? 'available' : 'unavailable')); ?>" onclick="<?php echo ($table_availability[$i] === 'available') ? 'toggleTable('.$i.');' : ''; ?>">Table <?php echo $i; ?></div>
+                <?php endfor; ?>
+            </div>
+        </div>
+        
+        <!-- Legend for table status -->
+        <div class="legend">
+            <div><span class="dot unavailable"></span>Unavailable</div>
+            <div><span class="dot sold_out"></span>Sold Out</div>
+            <div><span class="dot available"></span>Available</div>
+            <div><span class="dot my-seat"></span>My Seat</div>
+            <div><span class="dot reserved"></span>Reserved</div>
+        </div>
+
+        <form id="booking-form" class="reservation-form" method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
+            <!-- Form fields for reservation details -->
+            <label for="date"><b>Select Date:</b></label>
+            <input type="date" id="date" name="date" required class="date-input">
+            
+            <label for="time"><b>Select Time:</b></label>
+            <input type="time" id="time" name="time" required class="time-input">
+            
+            <label for="Number-of-seats"><b>Number of Seats:</b></label>
+            <input type="text" placeholder="Number of Seats" id="seats" name="seats" required class="seat">
+            
+            <label for="Total-cost"><b>Total Cost:</b></label>
+            <input type="text" placeholder="Total Cost" id="cost" name="cost" required class="cost">
+            
+            <!-- Hidden input field to store selected table numbers -->
+            <input type="hidden" name="selected_tables" id="selected_tables" value="">
+            
+            <!-- Change type to "button" to prevent form submission -->
+            <button type="button" class="reserve-button" onclick="submitForm()">Reserve Table</button>
+            <button type="submit" class="buy-button">Buy Table</button>
+
+        </form>
+        
+        <!-- Success message for booking stored successfully -->
+        <div id="success-message" style="display: none;">
+            Tables bought successfully.
+        </div>
+    </div>
+    
+    <script>
+    // Function to handle buying tables
+    function buyTable() {
+        // Check if date and time are filled
+        var date = document.getElementById('date').value;
+        var time = document.getElementById('time').value;
+        if (!date || !time) {
+            alert("Date and time are required.");
+            return;
+        }
+
+        // Submit the form
+        submitForm();
+    }
+
+    // Function to submit the form
+    function submitForm() {
+        document.getElementById('booking-form').submit();
+    }
+
+    // Your existing JavaScript functions (if any)
+    // Initialize selectedTables array
+    var selectedTables = [];
+
+    console.log("Selected tables on page load:", selectedTables);
+
+    function toggleTable(tableID) {
+        console.log("Table ID clicked:", tableID);
+        
+        var index = selectedTables.indexOf(tableID);
+        if (index === -1) {
+            // Table not selected, so select it
+            selectedTables.push(tableID);
+        } else {
+            // Table already selected, so deselect it
+            selectedTables.splice(index, 1);
+        }
+
+        console.log("Selected tables after click:", selectedTables);
+
+        // Update table colors and form field
+        updateTableColors();
+        updateFormFields();
+    }
+
+    function updateTableColors() {
+        var tables = document.querySelectorAll('.table-box');
+        tables.forEach(function(table) {
+            var tableID = parseInt(table.textContent.split(' ')[1]);
+            if (selectedTables.includes(tableID)) {
+                table.classList.add('my-seat'); // Add the 'my-seat' class
+            } else {
+                table.classList.remove('my-seat'); // Remove the 'my-seat' class
+            }
+            // Set color class based on availability
+            var availability = <?php echo json_encode($table_availability); ?>[tableID];
+            if (availability === 'reserved') {
+                table.classList.remove('available', 'unavailable', 'sold_out');
+                table.classList.add('reserved');
+            } else if (availability === 'sold-out') {
+                table.classList.remove('available', 'unavailable', 'reserved');
+                table.classList.add('sold_out');
+            } else if (availability === 'available') {
+                table.classList.remove('unavailable', 'reserved', 'sold_out');
+                table.classList.add('available');
+            } else {
+                table.classList.remove('available', 'reserved', 'sold_out');
+                table.classList.add('unavailable');
+            }
+        });
+    }
+
+    function updateFormFields() {
+        // Update hidden input field value with selected tables
+        document.getElementById('selected_tables').value = JSON.stringify(selectedTables);
+        
+        // Update the number of tables displayed
+        var numTables = selectedTables.length;
+        document.getElementById('seats').value = numTables * 2; // Assuming each table has 2 seats
+
+        // Update the total amount displayed
+        var totalAmount = numTables * 200; // Assuming each table costs $200
+        document.getElementById('cost').value = totalAmount;
+    }
+
+    function hideSuccessMessage() {
+        var successMessage = document.getElementById('success-message');
+        successMessage.style.display = 'none';
+    }
+
+    function showSuccessMessage() {
+        var successMessage = document.getElementById('success-message');
+        successMessage.style.display = 'block';
+        setTimeout(hideSuccessMessage, 2000); // Hide after 2 seconds (2000 milliseconds)
+    }
+
+    // Clear selected tables on page load
+    window.onload = function() {
+        clearSelectedTables();
+        hideSuccessMessage();
+        updateTableColors();
+    };
+
+    function clearSelectedTables() {
+        selectedTables = []; // Clear the selected tables array
+        updateTableColors(); // Update table colors to reflect cleared selection
+        updateFormFields(); // Update form fields to reflect cleared selection
+    }
+</script>
+
+</body>
+</html>
+
+<?php
+// Close database connection
+$conn->close();
+?>
+
+
+
+
+
+
+
+
+<?php
+// Establish database connection
+$servername = "localhost";
+$username = "root";
+$password = "";
+$database = "one_byte_foods";
+
+$conn = new mysqli($servername, $username, $password, $database);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Function to sanitize input data
+function sanitize_input($data) {
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data);
+    return $data;
+}
+
+// Handle form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Sanitize and store form data
+    $date = sanitize_input($_POST["date"]);
+    $time = sanitize_input($_POST["time"]);
+    $seats = sanitize_input($_POST["seats"]);
+    $cost = sanitize_input($_POST["cost"]);
+    $selected_tables = json_decode($_POST["selected_tables"]);
+
+    // Check if the user is logged in and get user information
+    session_start();
+    if (isset($_SESSION['user_id'])) {
+        $user_id = $_SESSION['user_id'];
+
+        // Fetch user name and email from the users table
+        $sql_user = "SELECT username, email FROM users WHERE id = '$user_id'";
+        $result_user = $conn->query($sql_user);
+
+        if ($result_user->num_rows > 0) {
+            $user_data = $result_user->fetch_assoc();
+            $user_name = $user_data['username'];
+            $user_email = $user_data['email'];
+
+            // Insert booking into database for each selected table
+            foreach ($selected_tables as $table_number) {
+                $sql_booking = "INSERT INTO booked_tables (booking_date, booking_time, table_number, user_name, user_email) 
+                                VALUES ('$date', '$time', '$table_number', '$user_name', '$user_email')";
+
+                if ($conn->query($sql_booking) !== TRUE) {
+                    echo "Error: " . $sql_booking . "<br>" . $conn->error;
+                    // Rollback any successful bookings if an error occurs
+                    $sql_rollback = "DELETE FROM booked_tables WHERE booking_date = '$date' AND booking_time = '$time'";
+                    $conn->query($sql_rollback);
+                    break; // Stop processing further bookings
+                }
+            }
+            echo "Booking stored successfully.";
+        } else {
+            echo "Error: User data not found.";
+        }
+    } else {
+        echo "Error: User not logged in.";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Booking</title>
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="2table.css">
+</head>
+<body>
+    <!-- Header and navigation code -->
+    <header>
+        <div class="container">
+            <a href="Mainpage.php" class="logo-link">
+                <h1>One Byte Foods</h1>
+            </a>
+            <nav>
+                <ul>
+                    <li><a href="booking.php" class="active">Bookings</a></li>
+                    <li><a href="contactUS.php">Contact Us</a></li>
+                    <li><a href="login.php">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="booking-container">
+        <h1>Select Your Table for 2</h1>
+        <!-- Table selection area -->
+        
+        <div class="table-selection">
+            <!-- First column -->
+            <div class="column">
+                <div class="table-box" onclick="toggleTable(1)">Table 1</div>
+                <div class="table-box" onclick="toggleTable(2)">Table 2</div>
+                <div class="table-box" onclick="toggleTable(3)">Table 3</div>
+                <div class="table-box" onclick="toggleTable(4)">Table 4</div>
+                <div class="table-box" onclick="toggleTable(5)">Table 5</div>
+            </div>
+            <!-- Second column -->
+            <div class="column1">
+                <div class="table-box" onclick="toggleTable(6)">Table 6</div>
+                <div class="table-box" onclick="toggleTable(7)">Table 7</div>
+                <div class="table-box" onclick="toggleTable(8)">Table 8</div>
+                <div class="table-box" onclick="toggleTable(9)">Table 9</div>
+                <div class="table-box" onclick="toggleTable(10)">Table 10</div>
+            </div>
+        </div>
+        
+        <!-- Legend for table status -->
+        <div class="legend">
+            <div><span class="dot unavailable"></span>Unavailable</div>
+            <div><span class="dot sold-out"></span>Sold Out</div>
+            <div><span class="dot available"></span>Available</div>
+            <div><span class="dot my-seat"></span>My Seat</div>
+            <div><span class="dot reserved"></span>Reserved</div>
+        </div>
+
+        <form id="booking-form" class="reservation-form" method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
+            <!-- Form fields for reservation details -->
+            <label for="date"><b>Select Date:</b></label>
+            <input type="date" id="date" name="date" required class="date-input">
+            
+            <label for="time"><b>Select Time:</b></label>
+            <input type="time" id="time" name="time" required class="time-input">
+            
+            <label for="Number-of-seats"><b>Number of Seats:</b></label>
+            <input type="text" placeholder="Number of Seats" id="seats" name="seats" required class="seat">
+            
+            <label for="Total-cost"><b>Total Cost:</b></label>
+            <input type="text" placeholder="Total Cost" id="cost" name="cost" required class="cost">
+            
+            <!-- Hidden input field to store selected table numbers -->
+            <input type="hidden" name="selected_tables" id="selected_tables" value="">
+            
+            <!-- Change type to "submit" to trigger form submission -->
+            <button type="button" class="buy-button" onclick="submitForm()">Buy Table</button>
+            <button type="submit">Reserve Table</button>
+        </form>
+         <!-- Success message for booking stored successfully -->
+         <div id="success-message" style="display: none;">
+            Booking stored successfully.
+        </div>
+    </div>
+    
+    <script>
+    // Initialize selectedTables array
+    var selectedTables = [];
+
+    console.log("Selected tables on page load:", selectedTables);
+
+    function toggleTable(tableNumber) {
+        console.log("Table number clicked:", tableNumber);
+        
+        var index = selectedTables.indexOf(tableNumber);
+        if (index === -1) {
+            // Table not selected, so select it
+            selectedTables.push(tableNumber);
+        } else {
+            // Table already selected, so deselect it
+            selectedTables.splice(index, 1);
+        }
+
+        console.log("Selected tables after click:", selectedTables);
+
+        // Update table colors and form field
+        updateTableColors();
+        updateFormFields();
+    }
+
+    function updateTableColors() {
+        var tables = document.querySelectorAll('.table-box');
+        tables.forEach(function(table, index) {
+            if (selectedTables.includes(index + 1)) {
+                table.classList.add('my-seat'); // Add the 'my-seat' class
+            } else {
+                table.classList.remove('my-seat'); // Remove the 'my-seat' class
+            }
+        });
+    }
+
+    function updateFormFields() {
+    // Update hidden input field value with selected tables
+    document.getElementById('selected_tables').value = JSON.stringify(selectedTables);
+    
+    // Update the number of tables displayed
+    var numTables = selectedTables.length;
+    document.getElementById('seats').value = numTables * 2; // Assuming each table has 2 seats
+
+    // Update the total amount displayed
+    var totalAmount = numTables * 200; // Assuming each table costs $200
+    document.getElementById('cost').value = totalAmount;
+}
+
+
+    function submitForm() {
+        // Your existing code for submitting the form goes here
+        var form = document.getElementById('booking-form');
+        if (form.checkValidity()) {
+            // Update the hidden input field value before submitting the form
+            updateFormFields();
+            form.submit();
+        } else {
+            alert('Please select date, time, and number of seats.');
+        }
+    }
+    function hideSuccessMessage() {
+        var successMessage = document.getElementById('success-message');
+        successMessage.style.display = 'none';
+    }
+
+    // Check if the success message exists, then hide it after 2 seconds
+    var successMessage = document.getElementById('success-message');
+    if (successMessage) {
+        setTimeout(hideSuccessMessage, 2000); // Hide after 2 seconds (2000 milliseconds)
+    }
+
+    function clearSelectedTables() {
+    selectedTables = []; // Clear the selected tables array
+    updateTableColors(); // Update table colors to reflect cleared selection
+    updateFormFields(); // Update form fields to reflect cleared selection
+}
+
+window.onload = clearSelectedTables;
+
+
+    </script>
+</body>
+</html>
+
+<?php
+// Close database connection
+$conn->close();
+?>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<?php
+// Establish database connection
+$servername = "localhost";
+$username = "root";
+$password = "";
+$database = "one_byte_foods";
+
+$conn = new mysqli($servername, $username, $password, $database);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Fetch table availability from the database
+$sql_availability = "SELECT TableID, TableName, Availability FROM tables";
+$result_availability = $conn->query($sql_availability);
+$table_availability = array();
+if ($result_availability->num_rows > 0) {
+    while ($row = $result_availability->fetch_assoc()) {
+        $table_availability[$row['TableID']] = $row['Availability'];
+    }
+}
+
+// Function to sanitize input data
+function sanitize_input($data) {
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data);
+    return $data;
+}
+
+// Handle form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Sanitize and store form data
+    $date = sanitize_input($_POST["date"]);
+    $time = sanitize_input($_POST["time"]);
+    $seats = sanitize_input($_POST["seats"]);
+    $cost = sanitize_input($_POST["cost"]);
+    $selected_tables = json_decode($_POST["selected_tables"]);
+
+    // Check if date and time are filled
+    if (empty($date) || empty($time)) {
+        die("Date and time are required.");
+    }
+
+    // Update table availability to 'reserved' in the tables table
+    foreach ($selected_tables as $table_id) {
+        $sql_update_availability = "UPDATE tables SET Availability = 'reserved' WHERE TableID = ?";
+        $stmt = $conn->prepare($sql_update_availability);
+        $stmt->bind_param("i", $table_id);
+        $stmt->execute();
+    }
+
+    // Insert booking into booked_tables_two for each selected table
+    session_start();
+    if (isset($_SESSION['user_id'])) {
+        $user_id = $_SESSION['user_id'];
+
+        // Fetch user name and email from the users table
+        $sql_user = "SELECT username, email FROM users WHERE id = ?";
+        $stmt = $conn->prepare($sql_user);
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result_user = $stmt->get_result();
+
+        if ($result_user->num_rows > 0) {
+            $user_data = $result_user->fetch_assoc();
+            $user_name = $user_data['username'];
+            $user_email = $user_data['email'];
+
+            // Insert booking into booked_tables_two for each selected table
+            foreach ($selected_tables as $table_id) {
+                $sql_booking = "INSERT INTO booked_tables_two (booking_date, booking_time, table_number, user_name, user_email) 
+                VALUES (?, ?, ?, ?, ?)";
+
+                $stmt = $conn->prepare($sql_booking);
+                $stmt->bind_param("ssiss", $date, $time, $table_id, $user_name, $user_email);
+                if ($stmt->execute() !== TRUE) {
+                    echo "Error: " . $stmt->error;
+                }
+            }
+            // Redirect to payment page with total cost as parameter
+            $total_cost = $cost;
+            header("Location: payment.php?amount=$total_cost");
+            exit;
+        } else {
+            echo "Error: User data not found.";
+        }
+    } else {
+        echo "Error: User not logged in.";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Booking</title>
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="2table.css">
+</head>
+<body>
+    <!-- Header and navigation code -->
+    <header>
+        <div class="container">
+            <a href="Mainpage.php" class="logo-link">
+                <h1>One Byte Foods</h1>
+            </a>
+            <nav>
+                <ul>
+                    <li><a href="booking.php" class="active">Bookings</a></li>
+                    <li><a href="contactUS.php">Contact Us</a></li>
+                    <li><a href="login.php">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="booking-container">
+        <h1>Select Your Table for 2</h1>
+        <!-- Table selection area -->
+        
+        <div class="table-selection">
+            <!-- First column -->
+            <div class="column">
+                <?php for ($i = 1; $i <= 5; $i++) : ?>
+                    <div class="table-box <?php echo ($table_availability[$i] === 'reserved') ? 'reserved' : (($table_availability[$i] === 'sold-out') ? 'sold_out' : (($table_availability[$i] === 'available') ? 'available' : 'unavailable')); ?>" onclick="<?php echo ($table_availability[$i] === 'available') ? 'toggleTable('.$i.');' : ''; ?>">Table <?php echo $i; ?></div>
+                <?php endfor; ?>
+            </div>
+
+            <!-- Second column -->
+            <div class="column">
+                <?php for ($i = 6; $i <= 10; $i++) : ?>
+                    <div class="table-box <?php echo ($table_availability[$i] === 'reserved') ? 'reserved' : (($table_availability[$i] === 'sold-out') ? 'sold_out' : (($table_availability[$i] === 'available') ? 'available' : 'unavailable')); ?>" onclick="<?php echo ($table_availability[$i] === 'available') ? 'toggleTable('.$i.');' : ''; ?>">Table <?php echo $i; ?></div>
+                <?php endfor; ?>
+            </div>
+        </div>
+        
+        <!-- Legend for table status -->
+        <div class="legend">
+            <div><span class="dot unavailable"></span>Unavailable</div>
+            <div><span class="dot sold_out"></span>Sold Out</div>
+            <div><span class="dot available"></span>Available</div>
+            <div><span class="dot my-seat"></span>My Seat</div>
+            <div><span class="dot reserved"></span>Reserved</div>
+        </div>
+
+        <form id="booking-form" class="reservation-form" method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
+            <!-- Form fields for reservation details -->
+            
+            <!-- Form fields for reservation details -->
+<label for="date"><b>Select Date:</b></label>
+<input type="date" id="date" name="date" required class="date-input">
+
+<label for="time"><b>Select Time:</b></label>
+<input type="time" id="time" name="time" required class="time-input">
+
+<label for="Number-of-seats"><b>Number of Seats:</b></label>
+<input type="text" placeholder="Number of Seats" id="seats" name="seats" required class="seat">
+
+<label for="Total-cost"><b>Total Cost:</b></label>
+<input type="text" placeholder="Total Cost" id="cost" name="cost" required class="cost">
+
+<!-- Hidden input field to store selected table numbers -->
+<input type="hidden" name="selected_tables" id="selected_tables" value="">
+
+<!-- Input fields for user details -->
+<label for="user_name"><b>User Name:</b></label>
+<input type="text" placeholder="User Name" id="user_name" name="user_name" required>
+
+<label for="user_email"><b>User Email:</b></label>
+<input type="email" placeholder="User Email" id="user_email" name="user_email" required>
+
+<!-- Change type to "button" to prevent form submission -->
+<button type="button" class="reserve-button" onclick="reserveTable()">Reserve Table</button>
+
+
+
+<!-- Change type to "button" for buying a table -->
+<button type="button" class="buy-button" onclick="buyTable()">Buy Table</button>
+
+        </form>
+        
+        <!-- Success message for booking stored successfully -->
+        <div id="success-message" style="display: none;">
+            Tables reserved successfully.
+        </div>
+    </div>
+    
+    <script>
+    // Initialize selectedTables array
+    var selectedTables = [];
+
+    console.log("Selected tables on page load:", selectedTables);
+
+    // Function to handle toggling tables
+    function toggleTable(tableID) {
+        console.log("Table ID clicked:", tableID);
+        
+        var index = selectedTables.indexOf(tableID);
+        if (index === -1) {
+            // Table not selected, so select it
+            selectedTables.push(tableID);
+        } else {
+            // Table already selected, so deselect it
+            selectedTables.splice(index, 1);
+        }
+
+        console.log("Selected tables after click:", selectedTables);
+
+        // Update table colors and form field
+        updateTableColors();
+        updateFormFields(); // Call to update the form fields
+    }
+
+    function updateTableColors() {
+        var tables = document.querySelectorAll('.table-box');
+        tables.forEach(function(table) {
+            var tableID = parseInt(table.textContent.split(' ')[1]);
+            if (selectedTables.includes(tableID)) {
+                table.classList.add('my-seat'); // Add the 'my-seat' class
+            } else {
+                table.classList.remove('my-seat'); // Remove the 'my-seat' class
+            }
+            // Set color class based on availability
+            var availability = <?php echo json_encode($table_availability); ?>[tableID];
+            if (availability === 'reserved') {
+                table.classList.remove('available', 'unavailable', 'sold_out');
+                table.classList.add('reserved');
+            } else if (availability === 'sold-out') {
+                table.classList.remove('available', 'unavailable', 'reserved');
+                table.classList.add('sold_out');
+            } else if (availability === 'available') {
+                table.classList.remove('unavailable', 'reserved', 'sold_out');
+                table.classList.add('available');
+            } else {
+                table.classList.remove('available', 'reserved', 'sold_out');
+                table.classList.add('unavailable');
+            }
+        });
+    }
+
+    function updateFormFields() {
+        // Update hidden input field value with selected tables
+        document.getElementById('selected_tables').value = JSON.stringify(selectedTables);
+        
+        // Update the number of tables displayed
+        var numTables = selectedTables.length;
+        document.getElementById('seats').value = numTables * 2; // Assuming each table has 2 seats
+
+        // Update the total amount displayed
+        var totalAmount = numTables * 200; // Assuming each table costs $200
+        document.getElementById('cost').value = totalAmount;
+    }
+
+    function reserveTable() {
+    // Gather necessary information
+    var date = document.getElementById('date').value;
+    var time = document.getElementById('time').value;
+    var selectedTables = JSON.parse(document.getElementById('selected_tables').value);
+
+    // Check if date, time, and selected tables are filled
+    if (!date || !time || selectedTables.length === 0) {
+        alert("Please select a date, time, and at least one table before proceeding to reservation.");
+        return;
+    }
+
+    // Perform AJAX request to handle reservation
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'handle_reservation.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                // Reservation successful, update table colors and display success message
+                updateTableColors();
+                showSuccessMessage();
+            } else {
+                // Error handling if reservation failed
+                console.error('Reservation failed:', xhr.responseText);
+                alert('Reservation failed. Please try again later.');
+            }
+        }
+    };
+    var data = {
+        date: date,
+        time: time,
+        selectedTables: selectedTables
+    };
+    xhr.send(JSON.stringify(data));
+}
+
+
+function buyTable() {
+    // Check if date, time, selected tables, user_name, and user_email are filled
+    var date = document.getElementById('date').value;
+    var time = document.getElementById('time').value;
+    var selectedTables = JSON.parse(document.getElementById('selected_tables').value);
+    var userName = document.getElementById('user_name').value;
+    var userEmail = document.getElementById('user_email').value;
+
+    console.log("Date:", date);
+    console.log("Time:", time);
+    console.log("Selected Tables:", selectedTables);
+    console.log("User Name:", userName);
+    console.log("User Email:", userEmail);
+
+    if (!date || !time || selectedTables.length === 0 || !userName || !userEmail) {
+        alert("Please fill in all the required fields before proceeding to buy.");
+        return;
+    }
+
+    // Redirect to payment.php
+    var totalCost = document.getElementById('cost').value;
+    // Pass selected tables, date, time, user_name, and user_email as URL parameters to payment.php
+    var tablesParam = selectedTables.join(','); // Convert array to comma-separated string
+    window.location.href = 'payment.php?amount=' + totalCost + '&tables=' + tablesParam + '&date=' + date + '&time=' + time + '&user_name=' + userName + '&user_email=' + userEmail;
+}
+
+
+
+
+    function hideSuccessMessage() {
+        var successMessage = document.getElementById('success-message');
+        successMessage.style.display = 'none';
+    }
+
+    function showSuccessMessage() {
+        var successMessage = document.getElementById('success-message');
+        successMessage.style.display = 'block';
+        setTimeout(hideSuccessMessage, 2000); // Hide after 2 seconds (2000 milliseconds)
+    }
+
+    // Clear selected tables on page load
+    window.onload = function() {
+        clearSelectedTables();
+        hideSuccessMessage();
+        updateTableColors();
+    };
+
+    function clearSelectedTables() {
+        selectedTables = []; // Clear the selected tables array
+        updateTableColors(); // Update table colors to reflect cleared selection
+        updateFormFields(); // Update form fields to reflect cleared selection
+    }
+    </script>
+
+</body>
+</html>
+
+<?php
+// Close database connection
+$conn->close();
+?>
+

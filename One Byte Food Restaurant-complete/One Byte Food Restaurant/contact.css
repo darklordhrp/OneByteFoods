@@ -1,0 +1,101 @@
+/*Nav Bar Code*/
+.container {
+    text-align: center;
+}
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url("../bgi.jpg"); 
+    background-size: cover; 
+    background-position: center top -50px; 
+    margin: 0; 
+    padding: 0;
+}
+.container {
+    width: 90%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 20px 0;
+    
+}
+header h1 {
+    margin: 0;
+}
+nav ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+nav ul li {
+    display: inline;
+    margin-left: 20px;
+}
+nav ul li a {
+    text-decoration: none;
+    color: #fff;
+    font-weight: bold;
+}
+nav ul li a.active {
+    color: #ffcc00; /* Set color to yellow for active link */
+}
+nav ul li a:hover {
+    color: #ffcc00;
+}
+.logo-link {
+    text-decoration: none; 
+    color: white; 
+}
+.logo-link:hover {
+    color: #ffcc00; 
+}
+
+
+.contact-form-container {
+    background-color: rgba(255, 255, 255, 0.5); /* Transparent white background */
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 390px;
+    position: absolute;
+    top: 50%;
+    left: 37%; /* Adjust the distance from the right edge */
+    transform: translate(0%, -50%); /* Center vertically */
+}
+
+.contact-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.contact-form label {
+    margin-bottom: 10px;
+}
+
+.contact-form input[type="text"],
+.contact-form input[type="email"],
+.contact-form textarea {
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.contact-form button {
+    padding: 10px 20px;
+    background-color: #04AA6D;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.contact-form button:hover {
+    background-color: #0056b3;
+}
+

@@ -1,0 +1,230 @@
+/* Previous CSS */
+.container {
+    width: 90%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    overflow: hidden; /* Remove scrollbar */
+}
+
+.booking-container {
+    text-align: center;
+    margin: 20px auto;
+}
+
+.column {
+    padding-left: 10px;
+    float: left; /* Float the columns to the left */
+    margin-right: 10px; /* Adjust spacing between columns */
+}
+
+.column1 {
+    padding-left: 30px;
+    float: left; /* Float the columns to the left */
+    margin-right: 10px; /* Adjust spacing between columns */
+}
+
+.table-box {
+    width: 180px;
+    height: 80px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin: 10px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    cursor: pointer; /* Change cursor to pointer on hover */
+    margin-left: 1pc;
+}
+
+.table-box:hover {
+    background-color: #ffcc00; /* Change background color to yellow on hover */
+}
+
+/* styles.css */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 20px 0;
+}
+
+header h1 {
+    margin: 0;
+}
+
+nav ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+nav ul li {
+    display: inline;
+    margin-left: 20px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #fff;
+    font-weight: bold;
+}
+
+nav ul li a.active {
+    color: #ffcc00; /* Set color to yellow for active link */
+}
+
+nav ul li a:hover {
+    color: #ffcc00;
+}
+
+.logo-link {
+    text-decoration: none;
+    color: white;
+}
+
+.logo-link:hover {
+    color: #ffcc00;
+}
+
+/* Previous CSS */
+
+.my-seat {
+    background-color: yellow; /* Change this to the desired color */
+    /* Add any other styles you want for the selected tables */
+}
+
+
+/* Legend for table status */
+/* Legend for table status */
+.legend {
+    position: fixed;
+    top: 45%;
+    right: 30%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px;
+}
+
+/* Additional styling for legend items */
+.legend div {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+/* Additional styling for legend dots */
+.dot {
+    height: 30px;
+    width: 30px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+/* Different colors for different statuses */
+.available { background-color: #4CAF50; }
+.reserved { background-color: #FF9800; }
+.sold_out { background-color: red; } /* Updated to red */
+.unavailable { background-color: grey; }
+.my-seat { background-color: yellow; }
+
+
+
+label[for="Number-of-seats"] {
+    position: fixed; /* Change to fixed */
+    top: 540px; /* Adjust top position as needed */
+    left: 850px;
+} 
+
+label[for="Total-cost"] {
+    position: fixed; /* Change to fixed */
+    top: 540px; /* Adjust top position as needed */
+    left: 1080px;
+} 
+
+.cost {
+    /* Date input specific styles */
+    width: 200px;
+    height: 28px;
+    position: fixed; /* Change to fixed */
+    top: 560px; /* Adjust top position as needed */
+    left: 1080px;
+}
+.seat {
+    /* Date input specific styles */
+    width: 200px;
+    height: 28px;
+    position: fixed; /* Change to fixed */
+    top: 560px; /* Adjust top position as needed */
+    left: 850px;
+}
+
+
+.date-input {
+    /* Date input specific styles */
+    width: 200px;
+    height: 28px;
+    position: fixed; /* Change to fixed */
+    top: 500px; /* Adjust top position as needed */
+    left: 1080px;
+}
+
+.time-input {
+    /* Time input specific styles */
+    width: 200px;
+    height: 28px;
+    position: fixed; /* Change to fixed */
+    top: 500px; /* Adjust top position as needed */
+    left: 850px;
+}
+
+label[for="date"] {
+    position: fixed; /* Change to fixed */
+    top: 480px; /* Adjust top position as needed */
+    left: 1080px;
+} 
+
+label[for="time"] {
+    position: fixed; /* Change to fixed */
+    top: 480px; /* Adjust top position as needed */
+    left: 850px; /* Move the labels up by 50 pixels */
+}
+
+/* Reservation button */
+.reserve-button {
+    height: 34px;
+    width: 120px; /* Set the width to match the Buy button */
+    cursor: pointer;
+    position: fixed;
+    bottom: 90px; /* Move the button below the screen */
+    left: 900px;
+}
+
+/* Buy button */
+.buy-button {
+    height: 34px;
+    width: 120px; /* Set the width to match the Reservation button */
+    cursor: pointer;
+    margin-left: 10px; /* Adjust as needed to create space between buttons */
+    position: fixed;
+    bottom: 90px; /* Move the button below the screen */
+    left: 1030px; /* Adjust the left position as needed */
+}
+
+
+
+  
+
+body {
+    overflow: hidden; /* Remove scrollbar */
+}

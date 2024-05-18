@@ -1,0 +1,109 @@
+/*Nav Bar Code*/
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url("../bgi.jpg"); 
+    background-size: cover; 
+    background-position: center top -50px; 
+    margin: 0; 
+    padding: 0;
+}
+.container {
+    width: 90%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 20px 0;
+    
+}
+header h1 {
+    margin: 0;
+}
+nav ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+nav ul li {
+    display: inline;
+    margin-left: 20px;
+}
+nav ul li a {
+    text-decoration: none;
+    color: #fff;
+    font-weight: bold;
+}
+nav ul li a.active {
+    color: #ffcc00; /* Set color to yellow for active link */
+}
+nav ul li a:hover {
+    color: #ffcc00;
+}
+.logo-link {
+    text-decoration: none; 
+    color: white; 
+}
+.logo-link:hover {
+    color: #ffcc00; 
+}
+
+/* Payment Page Styles */
+
+.payment-container {
+    max-width: 600px;
+    margin: 35px auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.payment-container h2 {
+    margin-top: 0;
+    font-size: 24px;
+}
+
+.payment-option {
+    margin-bottom: 15px;
+}
+
+.payment-option input[type="text"],
+.payment-option textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.payment-option input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+.payment-option label {
+    font-weight: bold;
+}
+
+.remarks textarea {
+    height: 100px;
+    width: 590px;
+}
+
+.payment-option button {
+    padding: 10px 20px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+.payment-option button:hover {
+    background-color: #ffcc00;
+}

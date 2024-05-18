@@ -1,0 +1,81 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url("../bgi.jpg"); 
+    background-size: cover; 
+    background-position: center top -50px; 
+    margin: 0; 
+    padding: 0; 
+}
+
+.container {
+    width: 90%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 20px 0;
+}
+
+header h1 {
+    margin: 0;
+}
+
+nav ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+nav ul li {
+    display: inline;
+    margin-left: 20px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #fff;
+    font-weight: bold;
+}
+
+nav ul li a:hover {
+    color: #ffcc00;
+}
+
+
+.buttons-container {
+    display: flex;
+    flex-wrap: wrap; /* Allow buttons to wrap to the next line */
+    justify-content: center; /* Center align items horizontally */
+    margin-top: 220px;
+}
+
+.middle-btn,
+.middle-btn1 {
+    background-color: white;
+    color: black;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px; /* Adjust margin as needed */
+    cursor: pointer;
+    border-radius: 5px;
+    width: 200px; /* Set a fixed width for consistent button sizes */
+    text-align: center; /* Align text in the center */
+}
+
+.middle-btn a,
+.middle-btn1 a {
+    text-decoration: none; /* Remove underline from links */
+    color: inherit; /* Inherit color from parent button */
+}
+
+.buttons-container :hover {
+    background-color: #ffcc00;
+}
+
+
